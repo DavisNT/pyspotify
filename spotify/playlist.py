@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import collections
 import logging
+import threading
 
 import spotify
 from spotify import ffi, lib, serialized, utils
@@ -640,14 +641,21 @@ class _PlaylistCallbacks(object):
             spotify._session_instance, sp_playlist, add_ref=True)
         playlist.emit(PlaylistEvent.PLAYLIST_STATE_CHANGED, playlist)
 
+    playlist_update_in_progress_threads = []
+
     @staticmethod
     @ffi.callback('void(sp_playlist *playlist, bool done, void *userdata)')
     def playlist_update_in_progress(sp_playlist, done, userdata):
-        logger.debug('Playlist update in progress')
-        playlist = Playlist._cached(
-            spotify._session_instance, sp_playlist, add_ref=True)
-        playlist.emit(
-            PlaylistEvent.PLAYLIST_UPDATE_IN_PROGRESS, playlist, bool(done))
+        if _PlaylistCallbacks.playlist_update_in_progress_threads.count(threading.current_thread()) == 0:
+            _PlaylistCallbacks.playlist_update_in_progress_threads.append(threading.current_thread())
+            logger.debug('Playlist update in progress')
+            playlist = Playlist._cached(
+                spotify._session_instance, sp_playlist, add_ref=True)
+            playlist.emit(
+                PlaylistEvent.PLAYLIST_UPDATE_IN_PROGRESS, playlist, bool(done))
+            _PlaylistCallbacks.playlist_update_in_progress_threads.remove(threading.current_thread())
+        else:
+            logger.warning('Prevented loop inside playlist_update_in_progress() callback')
 
     @staticmethod
     @ffi.callback('void(sp_playlist *playlist, void *userdata)')

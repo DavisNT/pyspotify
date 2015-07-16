@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import collections
 import logging
-import threading
 
 import spotify
 from spotify import ffi, lib, serialized, utils

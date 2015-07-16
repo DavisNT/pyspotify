@@ -644,28 +644,7 @@ class _PlaylistCallbacks(object):
     @staticmethod
     @ffi.callback('void(sp_playlist *playlist, bool done, void *userdata)')
     def playlist_update_in_progress(sp_playlist, done, userdata):
-        if _PlaylistCallbacks.interlock_playlist_update_in_progress(True):
-            logger.debug('Playlist update in progress')
-            playlist = Playlist._cached(
-                spotify._session_instance, sp_playlist, add_ref=True)
-            playlist.emit(
-                PlaylistEvent.PLAYLIST_UPDATE_IN_PROGRESS, playlist, bool(done))
-            _PlaylistCallbacks.interlock_playlist_update_in_progress(False)
-        else:
-            logger.warning('Prevented loop inside playlist_update_in_progress() callback (thread: %X)', threading.current_thread().ident)
-
-    playlist_update_in_progress_running = False
-
-    @staticmethod
-    @serialized
-    def interlock_playlist_update_in_progress(op_lock):
-        if op_lock:
-            if _PlaylistCallbacks.playlist_update_in_progress_running:
-                return False
-            _PlaylistCallbacks.playlist_update_in_progress_running = True
-            return True
-        else:
-            _PlaylistCallbacks.playlist_update_in_progress_running = False
+        pass
 
     @staticmethod
     @ffi.callback('void(sp_playlist *playlist, void *userdata)')
